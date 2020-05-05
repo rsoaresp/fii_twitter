@@ -1,0 +1,15 @@
+
+despesas_type:
+#  - 'empenho'
+#  - 'liquidacao'
+  - 'pagamento'
+
+value_column:
+  'empenho': 'ValorEmitido'
+  'liquidacao': 'ValorTransacao'
+  'pagamento': 'ValorTransacao'
+
+operations:
+  'sum': 'valor total'
+  'max': 'maior valor no período'
+  'mean': 'valor médio dos gastos no período'
