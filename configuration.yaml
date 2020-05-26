@@ -1,11 +1,26 @@
+api:
+  'base_url': "https://transparencia.campinas.sp.gov.br/index.php?"
+  'actions': 'action=ws&mode=getDespesas&ano={year}&mesinicio={begin}&mestermino={month}&tipotr={despesa}'
 
-despesas_type:
-#  - 'empenho'
-#  - 'liquidacao'
+cleaning:
+  'date_column': 'mesAno'
+
+  'str_columns_to_parse':
+    - 'UnidadeGestoraDESC'
+    - 'CredorDESC'
+    - 'NaturezaDESC'
+
+  'numeric_columns_to_parse':
+    - 'ValorTransacao'
+    - 'ValorEmpenhado'
+
+despesa_types:
+  - 'empenho'
+  - 'liquidacao'
   - 'pagamento'
 
 value_column:
-  'empenho': 'ValorEmitido'
+  'empenho': 'ValorEmpenhado'
   'liquidacao': 'ValorTransacao'
   'pagamento': 'ValorTransacao'
 

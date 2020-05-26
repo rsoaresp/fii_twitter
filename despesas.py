@@ -1,47 +1,61 @@
 import html
-
-import requests
-import pandas as pd
-from pandas import DataFrame
 from datetime import datetime
+from typing import Optional, Tuple, Dict
+
+import pandas as pd
+import requests
+from pandas import DataFrame
+
+from utils import config_loader
 
 
 class Despesas:
 
-    def __init__(self):
-        self.data_hoje = datetime.today()
-        self.ano = self.data_hoje.year
-        self.mes = self.data_hoje.month
-        self.base_url = "https://transparencia.campinas.sp.gov.br/index.php?"
+    def __init__(self, data: Optional[datetime] = None):
+        self.data = data if data else datetime.today()
+        self.config = config_loader('configuration.yaml')
 
-    def get_despesa_data(self, despesa_type: str) -> DataFrame:
+    def get_despesas_up_to_data(self, despesa: str) -> Tuple[Dict, DataFrame]:
 
-        url_address = self._get_despesa_request_str(despesa_type)
+        url_address = self._get_despesa_request_str(despesa)
         response = requests.get(url_address)
 
-        df = pd.DataFrame(response.json())
-        df = self._ajeita_colunas_string(df)
-        df['mesAno'] = pd.to_datetime(df['mesAno'], infer_datetime_format=True)
-
         if response.status_code == 200:
-            return df
+            return response, pd.DataFrame(response.json())
         else:
-            raise Exception('Could not perform get operation')
+            return response, pd.DataFrame()
 
-    def _ajeita_colunas_string(self, df):
-        colunas_para_arrumar = ['UnidadeGestoraDESC', 'CredorDESC', 'NaturezaDESC']
+    def _get_despesa_request_str(self, despesa: str) -> str:
 
-        for coluna in colunas_para_arrumar:
-            df[coluna] = df[coluna].apply(lambda x: html.unescape(x)).astype(str)
-        return df
-
-    def _get_despesa_request_str(self, tipo_despesa: str) -> str:
-
-        if tipo_despesa not in ['empenho', 'liquidacao', 'pagamento']:
+        if despesa not in self.config['despesa_types']:
             raise Exception('Invalid despesa type')
 
-        despesa_str = f'action=ws&mode=getDespesas&ano={self.ano}&mesinicio={1}&mestermino={self.mes}&tipotr={tipo_despesa}'
+        args = dict(despesa=despesa, year=self.data.year, month=self.data.month, begin=1)
+        despesa_str = self.config['api']['actions'].format(**args)
 
-        api_call_url = f'{self.base_url}{despesa_str}'
+        api_call_url = f"{self.config['api']['base_url']}{despesa_str}"
 
         return api_call_url
+
+
+class Clean:
+
+    def __init__(self):
+        self.config = config_loader('configuration.yaml')
+
+    def parse_string_columns(self, df: DataFrame) -> DataFrame:
+        for column in self.config['cleaning']['str_columns_to_parse']:
+            if column in df.columns:
+                df[column] = df[column].apply(lambda x: html.unescape(x)).astype(str)
+        return df
+
+    def parse_numeric_columns(self, df: DataFrame) -> DataFrame:
+        for column in self.config['cleaning']['numeric_columns_to_parse']:
+            if column in df.columns:
+                df[column] = df[column].astype(float)
+        return df
+
+    def parse_dates(self, df: DataFrame) -> DataFrame:
+        column = self.config['cleaning']['date_column']
+        df[column] = pd.to_datetime(df[column], infer_datetime_format=True)
+        return df

@@ -12,16 +12,18 @@ def publicar_tuites():
 
     api = tweepy.API(auth)
 
-    for msg in Mensagens().despesas_totais():
+    message_api = Mensagens()
+
+    for msg in message_api.total_despesas():
         status = api.update_status(msg)
 
-    for msg in Mensagens().top_gastos():
+    for msg in message_api.top_gastos():
         try:
             status_top_gastos = api.update_status(msg, id=str(uuid.uuid4()), in_reply_to_status_id=status_top_gastos.id)
         except UnboundLocalError:
             status_top_gastos = api.update_status(msg, id=str(uuid.uuid4()))
 
-    for msg in Mensagens().top_gastos_credor():
+    for msg in message_api.top_gastos_credor():
         try:
             status_top_gastos_credor = api.update_status(msg, id=str(uuid.uuid4()), in_reply_to_status_id=status_top_gastos_credor.id)
         except UnboundLocalError:
